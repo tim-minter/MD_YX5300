@@ -1,6 +1,7 @@
 // Test program for the MD_YX5300 library
 //
 // Menu driven interface using the Serial Monitor to test individual functions.
+// Modified by Tim Minter as part of my IBM Community Advocate role in collaboration with Eagle Labs
 //
 
 #include <MD_YX5300.h>
@@ -8,6 +9,12 @@
 // Connections for serial interface to the YX5300 module
 #define ARDUINO_RX 5  // connect to TX of MP3 Player module
 #define ARDUINO_TX 6  // connect to RX of MP3 Player module
+
+#define LIGHT_TRESHOLD 500 //the LDR value above which we play an mp3 file. <500 = dark. >500 = light.
+#define MP3_WAIT_TIME 5000 //how long to wait until we start checking for a signal again (should be bit longer than the max length of time of the mp3 files)
+
+int sensorPin = A0; // select the input pin for LDR
+int sensorValue = 0; // variable to store the value coming from the sensor
 
 // Define global variables
 MD_YX5300 mp3(ARDUINO_RX, ARDUINO_TX);
@@ -137,7 +144,8 @@ void help(void)
 bool processPlay(void)
 // Process the second level character(s) for the Play options
 {
-  char c = getNextChar(true);
+  //char c = getNextChar(true); //original line
+  char c = '>'; //this line has been hacked to always run the '>' (play next) command
 
   switch (toupper(c))
   {
@@ -326,8 +334,10 @@ void setup()
 
 void loop()
 {
-  if (processCmd() && !bUseCallback)
-    cbResponse(mp3.getStatus());
-
-  mp3.check();
+  sensorValue = analogRead(sensorPin); // read the value from the sensor
+  if(sensorValue>LIGHT_TRESHOLD) {
+    Serial.print("Payment Made");
+    processPlay(); //this has just been hacked to always run the "p>" command
+    delay(MP3_WAIT_TIME); //wait for the mp3 file to play
+  }
 }
